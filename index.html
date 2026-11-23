@@ -78,6 +78,10 @@ label.f{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weig
 .stat .n{font-size:22px;font-weight:800}.stat .l{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
 .prog{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:4px 0 12px}
 .prog i{display:block;height:100%;background:var(--green)}
+.bulkbar{margin-top:10px;padding:10px 0 4px;border-top:1px solid var(--line);flex-wrap:wrap}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--slate);cursor:pointer}
+.chk input,.pi input{width:20px;height:20px;accent-color:var(--blue);flex:none}
+.pi .pmain{flex:1;min-width:0}
 .plist .pi{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;gap:8px}
 .empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:14px}
 .okbox{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:var(--r);padding:14px;margin-bottom:12px}
@@ -103,7 +107,8 @@ label.f{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weig
   #app,.modal,#toast,.bar{display:none!important}
   #printArea{display:block}
 }
-.lbl{font-family:Arial,Helvetica,sans-serif;color:#000;width:100%;page-break-after:always}
+.lbl{font-family:Arial,Helvetica,sans-serif;color:#000;width:100%;break-inside:avoid}
+.lbl + .lbl{break-before:page;page-break-before:always}
 .lbl-h{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:6px}
 .lbl-t{font-size:10px;font-weight:700;letter-spacing:1px}
 .lbl-id{font-size:20px;font-weight:900;letter-spacing:.5px;margin:2px 0}
@@ -213,7 +218,12 @@ label.f{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weig
           <select class="in" id="fSt" style="flex:1;min-width:130px" onchange="renderProgress()">
             <option value="DRAFT">Belum final</option><option value="FINAL">Final</option><option value="">Semua status</option>
           </select>
-          <input class="in" id="fQ" placeholder="Cari ID" style="flex:1;min-width:120px" oninput="renderProgress()">
+          <input class="in" id="fQ" placeholder="Cari ID / pembuat / catatan" style="flex:1;min-width:150px" oninput="renderProgress()">
+        </div>
+        <div class="row bulkbar">
+          <label class="chk"><input type="checkbox" id="selAll" onchange="toggleAll(this.checked)"> Pilih semua (sesuai filter)</label>
+          <span class="grow"></span>
+          <button class="btn pri" id="btnBulk" onclick="printSelected()" disabled>🖨 Cetak label (0)</button>
         </div>
         <div class="plist" id="plist" style="margin-top:8px"><div class="empty">Tekan "Muat" untuk melihat progress.</div></div>
       </div>
@@ -598,11 +608,9 @@ function preLoadAsk() {
 }
 
 /* ===================== LABEL ===================== */
-function printLabel(pal) {
+function labelHtml(pal, i) {
   const h = pal.header;
-  const sizes = { '100x150': '100mm 150mm', '100x100': '100mm 100mm', 'A5': 'A5', 'A4': 'A4' };
-  $('pageSize').textContent = `@page{size:${sizes[S.label] || '100mm 150mm'};margin:4mm}`;
-  $('printArea').innerHTML = `
+  return `
     <div class="lbl">
       <div class="lbl-h">
         <div>
@@ -610,20 +618,32 @@ function printLabel(pal) {
           <div class="lbl-id">${esc(h.PALLET_ID)}</div>
           <div class="lbl-m">Lokasi: <b>${esc(h.LOKASI)}</b><br>Sesi: ${esc(h.SESI)}<br>Jml item: <b>${pal.lines.length}</b> · Rev ${esc(h.REV)}</div>
         </div>
-        <div id="lblQr"></div>
+        <div id="lblQr${i}"></div>
       </div>
-      <div class="lbl-bc"><svg id="lblBc"></svg></div>
+      <div class="lbl-bc"><svg id="lblBc${i}"></svg></div>
       <table>
         <tr><th>No</th><th>Kode</th><th>Deskripsi</th><th>UOM</th><th>Qty Pre</th></tr>
         ${pal.lines.map(l => `<tr><td>${l.no}</td><td>${esc(l.kode)}</td><td>${esc(l.desk)}</td><td>${esc(l.uom)}</td><td class="r">${nf(l.qtyPre)}</td></tr>`).join('')}
       </table>
       <div class="lbl-f"><span>Dibuat: ${esc(h.DIBUAT_OLEH)} · ${esc(h.DIBUAT_PADA)}</span><span>Total: <b>${nf(h.TOTAL_QTY_PRE)}</b></span></div>
+      ${h.CATATAN ? `<div class="lbl-f"><span>Catatan: ${esc(h.CATATAN)}</span></div>` : ''}
       <div class="lbl-sign"><div>Pre-STO (paraf)</div><div>STO Final (paraf)</div></div>
     </div>`;
-  try { new QRCode($('lblQr'), { text: h.PALLET_ID, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
-  try { JsBarcode('#lblBc', h.PALLET_ID, { format: 'CODE128', height: 34, width: 1.5, fontSize: 11, margin: 0 }); } catch (e) {}
-  setTimeout(() => window.print(), 400);
 }
+/** Cetak 1 atau banyak label palet sekaligus — 1 label per halaman */
+function printLabels(pals) {
+  if (!pals.length) return;
+  const sizes = { '100x150': '100mm 150mm', '100x100': '100mm 100mm', 'A5': 'A5', 'A4': 'A4' };
+  $('pageSize').textContent = `@page{size:${sizes[S.label] || '100mm 150mm'};margin:4mm}`;
+  $('printArea').innerHTML = pals.map(labelHtml).join('');
+  pals.forEach((pal, i) => {
+    const id = pal.header.PALLET_ID;
+    try { new QRCode($('lblQr' + i), { text: id, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+    try { JsBarcode('#lblBc' + i, id, { format: 'CODE128', height: 34, width: 1.5, fontSize: 11, margin: 0 }); } catch (e) {}
+  });
+  setTimeout(() => window.print(), 300 + Math.min(pals.length, 200) * 15);
+}
+function printLabel(pal) { printLabels([pal]); }
 
 /* ===================== STO FINAL ===================== */
 $('finScan').addEventListener('keydown', e => {
@@ -811,9 +831,10 @@ function flushOutbox(manual) {
 /* ===================== PROGRESS ===================== */
 function loadProgress() {
   $('plist').innerHTML = '<div class="empty">Memuat…</div>';
-  api('progress').then(d => { PROG = d; $('progSesi').textContent = 'Progress ' + d.sesi; $('progTime').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID'); renderProgress(); })
+  api('progress').then(d => { PROG = d; SEL = new Set(PROG.list.filter(p => SEL.has(p.id)).map(p => p.id)); $('progSesi').textContent = 'Progress ' + d.sesi; $('progTime').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID'); renderProgress(); })
     .catch(e => { $('plist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
 }
+let SEL = new Set(), PROG_ROWS = [];
 function renderProgress() {
   if (!PROG) return;
   const all = PROG.list.filter(p => p.st !== 'VOID');
@@ -822,12 +843,43 @@ function renderProgress() {
   const pct = all.length ? Math.round(fin / all.length * 100) : 0;
   $('sPct').textContent = pct + '%'; $('sBar').style.width = pct + '%';
   const lok = $('fLok').value, st = $('fSt').value, q = $('fQ').value.trim().toUpperCase();
-  const rows = PROG.list.filter(p => (!lok || p.lok === lok) && (!st || p.st === st) && (!q || p.id.includes(q)));
-  $('plist').innerHTML = rows.length ? rows.map(p => `
-    <div class="pi" onclick="go('fin');loadFinal('${esc(p.id)}')">
-      <div><b>${esc(p.id)}</b><div class="meta">${esc(p.lok)} · ${esc(p.n)} item · ${p.st === 'FINAL' ? 'final: ' + esc(p.fby) + ' ' + esc(p.fat) : 'dibuat: ' + esc(p.by)}</div></div>
+  PROG_ROWS = PROG.list.filter(p => (!lok || p.lok === lok) && (!st || p.st === st) &&
+    (!q || (p.id + ' ' + p.by + ' ' + (p.cat || '') + ' ' + p.lok).toUpperCase().includes(q)));
+  $('plist').innerHTML = PROG_ROWS.length ? PROG_ROWS.map(p => `
+    <div class="pi" data-id="${esc(p.id)}">
+      <input type="checkbox" class="pchk" data-id="${esc(p.id)}" ${SEL.has(p.id) ? 'checked' : ''}>
+      <div class="pmain"><b>${esc(p.id)}</b><div class="meta">${esc(p.lok)} · ${esc(p.n)} item · ${p.st === 'FINAL' ? 'final: ' + esc(p.fby) + ' ' + esc(p.fat) : 'dibuat: ' + esc(p.by)}${p.cat ? ' · 📝 ' + esc(p.cat) : ''}</div></div>
       <span class="st ${esc(p.st)}">${esc(p.st)}</span>
     </div>`).join('') : '<div class="empty">Tidak ada palet sesuai filter</div>';
+  updSel();
+}
+$('plist').addEventListener('click', e => {
+  if (e.target.classList.contains('pchk')) {
+    const id = e.target.dataset.id; e.target.checked ? SEL.add(id) : SEL.delete(id); updSel(); return;
+  }
+  const row = e.target.closest('.pi'); if (!row) return;
+  go('fin'); loadFinal(row.dataset.id);
+});
+function toggleAll(on) {
+  PROG_ROWS.forEach(p => on ? SEL.add(p.id) : SEL.delete(p.id));
+  document.querySelectorAll('.pchk').forEach(c => c.checked = on); updSel();
+}
+function updSel() {
+  const n = SEL.size;
+  $('btnBulk').textContent = '🖨 Cetak label (' + n + ')'; $('btnBulk').disabled = !n;
+  $('selAll').checked = PROG_ROWS.length > 0 && PROG_ROWS.every(p => SEL.has(p.id));
+}
+function printSelected() {
+  const ids = PROG.list.filter(p => SEL.has(p.id)).map(p => p.id);   // urut sesuai daftar
+  if (!ids.length) return;
+  if (ids.length > 200) return toast('Maksimal 200 label sekali cetak — persempit filter', 'err');
+  const btn = $('btnBulk'); busy(btn, true, 'Menyiapkan ' + ids.length + ' label');
+  api('getPallets', { ids }).then(list => {
+    busy(btn, false); updSel();
+    if (!list.length) return toast('Data palet tidak ditemukan', 'err');
+    printLabels(list);
+    toast(list.length + ' label siap dicetak', 'ok');
+  }).catch(e => { busy(btn, false); updSel(); toast(e.message, 'err'); });
 }
 
 /* ===================== SETTINGS ===================== */
