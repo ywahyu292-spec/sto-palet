@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#0f172a">
+<title>STO Palet</title>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<style id="pageSize">@page{size:100mm 150mm;margin:4mm}</style>
+<style>
+:root{
+  --navy:#0f172a;--navy2:#1e293b;--slate:#334155;--muted:#64748b;--line:#e2e8f0;--bg:#f1f5f9;--card:#fff;
+  --blue:#2563eb;--green:#059669;--amber:#d97706;--red:#dc2626;--r:12px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--navy);font-size:15px}
+button,input,select{font:inherit}
+.top{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;padding:10px 16px;display:flex;align-items:center;gap:10px}
+.brand{font-weight:700;letter-spacing:.3px}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:#334155;color:#e2e8f0;white-space:nowrap}
+.grow{flex:1}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block}
+.dot.off{background:var(--red)}
+.icon-btn{background:transparent;border:0;color:#fff;font-size:20px;padding:4px 6px;cursor:pointer}
+.tabs{position:sticky;top:46px;z-index:19;display:flex;background:var(--navy2)}
+.tabs button{flex:1;background:none;border:0;color:#94a3b8;padding:11px 4px;font-weight:600;border-bottom:3px solid transparent;cursor:pointer}
+.tabs button.on{color:#fff;border-color:#60a5fa}
+main{max-width:860px;margin:0 auto;padding:14px 16px 120px}
+section{display:none}section.on{display:block}
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:12px;box-shadow:0 1px 2px rgba(15,23,42,.06);border:1px solid var(--line)}
+.card h3{margin:0 0 10px;font-size:15px;color:var(--slate)}
+label.f{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.in{width:100%;padding:11px 12px;border:1.5px solid #cbd5e1;border-radius:10px;background:#fff;outline:none}
+.in:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.in.big{font-size:18px;font-weight:600;letter-spacing:.5px}
+.row{display:flex;gap:8px;align-items:center}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer;background:#e2e8f0;color:var(--navy);white-space:nowrap}
+.btn.pri{background:var(--blue);color:#fff}.btn.ok{background:var(--green);color:#fff}
+.btn.warn{background:var(--amber);color:#fff}.btn.dang{background:#fee2e2;color:var(--red)}
+.btn.ghost{background:transparent;border:1.5px solid #cbd5e1}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.cam{font-size:18px;padding:10px 13px}
+.picker{position:relative}
+.sugg{position:absolute;left:0;right:0;top:100%;z-index:15;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px rgba(15,23,42,.15);max-height:360px;overflow:auto;display:none}
+.sugg button{display:block;width:100%;text-align:left;border:0;background:#fff;padding:9px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer}
+.sugg button:hover,.sugg button:focus{background:#eff6ff}
+.sugg b{font-size:13px}.sugg span{display:block;font-size:12px;color:var(--muted);margin-top:1px}
+.sugg em{font-style:normal;font-size:11px;font-weight:700;color:var(--slate);background:#f1f5f9;padding:1px 6px;border-radius:5px;margin-left:4px}
+.sugg button.act{background:#eff6ff;box-shadow:inset 3px 0 0 var(--blue)}
+.sugg mark{background:#fde68a;color:inherit;padding:0 1px;border-radius:2px}
+.sg-h{position:sticky;top:0;background:#f8fafc;font-size:11px;font-weight:600;color:var(--muted);padding:6px 12px;border-bottom:1px solid var(--line)}
+.line{display:grid;grid-template-columns:1fr 110px 36px;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9}
+.line:last-child{border-bottom:0}
+.li-k{font-weight:700;font-size:13px}.li-d{font-size:13px;color:var(--slate)}.li-u{font-size:11px;color:var(--muted)}
+.qty{text-align:right;font-weight:700;padding:9px 10px}
+.x{border:0;background:#fee2e2;color:var(--red);border-radius:8px;height:36px;cursor:pointer;font-weight:700}
+.fline{padding:12px 0;border-bottom:1px solid #f1f5f9}
+.fline:last-child{border-bottom:0}
+.fgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px;align-items:end}
+.fgrid .lab{font-size:11px;color:var(--muted);font-weight:600}
+.fgrid .val{font-weight:700;font-size:16px;padding:8px 0}
+.sel{display:inline-block;font-weight:700;padding:7px 10px;border-radius:8px;text-align:center;min-width:70px}
+.sel.z{background:#dcfce7;color:var(--green)}.sel.p{background:#dbeafe;color:var(--blue)}.sel.n{background:#fee2e2;color:var(--red)}
+.tag{font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;margin-left:6px;vertical-align:middle}
+.tag.add{background:#fef3c7;color:#92400e}
+.st{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;letter-spacing:.4px}
+.st.DRAFT{background:#fef3c7;color:#92400e}.st.FINAL{background:#dcfce7;color:#065f46}.st.VOID{background:#e2e8f0;color:#475569}
+.palhead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.palid{font-size:20px;font-weight:800;letter-spacing:.5px}
+.meta{font-size:12px;color:var(--muted);margin-top:2px}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:18;background:#fff;border-top:1px solid var(--line);padding:10px 16px;box-shadow:0 -4px 16px rgba(15,23,42,.08)}
+.bar .in-bar{max-width:860px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.bar .sum{flex:1;font-size:13px;color:var(--slate)}.bar .sum b{color:var(--navy)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px;text-align:center}
+.stat .n{font-size:22px;font-weight:800}.stat .l{font-size:11px;color:var(--muted);font-weight:600;text-transform:uppercase}
+.prog{height:8px;background:#e2e8f0;border-radius:99px;overflow:hidden;margin:4px 0 12px}
+.prog i{display:block;height:100%;background:var(--green)}
+.plist .pi{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #f1f5f9;cursor:pointer;gap:8px}
+.empty{text-align:center;color:var(--muted);padding:26px 10px;font-size:14px}
+.okbox{background:#ecfdf5;border:1px solid #a7f3d0;border-radius:var(--r);padding:14px;margin-bottom:12px}
+.warnbox{background:#fffbeb;border:1px solid #fde68a;border-radius:var(--r);padding:12px;margin-bottom:12px;font-size:14px}
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.mbox{background:#fff;border-radius:16px;width:100%;max-width:440px;padding:16px;max-height:90vh;overflow:auto}
+.mbox h3{margin:0 0 10px}
+#scanModal{z-index:55}
+#reader{width:100%;border-radius:12px;overflow:hidden;background:#000}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:60;background:var(--navy);color:#fff;padding:11px 16px;border-radius:10px;font-size:14px;display:none;max-width:90vw;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+#toast.err{background:var(--red)}#toast.ok{background:var(--green)}
+.hist{font-size:13px}.hist div{padding:6px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid #fff;border-right-color:transparent;border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.small{font-size:12px;color:var(--muted)}
+#printArea{display:none}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}.line{grid-template-columns:1fr 92px 34px}}
+
+/* ======== LABEL CETAK ======== */
+@media print{
+  body{background:#fff}
+  #app,.modal,#toast,.bar{display:none!important}
+  #printArea{display:block}
+}
+.lbl{font-family:Arial,Helvetica,sans-serif;color:#000;width:100%;page-break-after:always}
+.lbl-h{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #000;padding-bottom:6px}
+.lbl-t{font-size:10px;font-weight:700;letter-spacing:1px}
+.lbl-id{font-size:20px;font-weight:900;letter-spacing:.5px;margin:2px 0}
+.lbl-m{font-size:10px;line-height:1.4}
+.lbl-bc{text-align:center;margin:6px 0 4px}
+.lbl table{width:100%;border-collapse:collapse;font-size:9px}
+.lbl th,.lbl td{border:1px solid #000;padding:2px 3px;text-align:left;vertical-align:top}
+.lbl th{background:#e5e5e5}
+.lbl td.r{text-align:right;font-weight:700}
+.lbl-f{display:flex;justify-content:space-between;font-size:9px;margin-top:6px}
+.lbl-sign{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;font-size:9px}
+.lbl-sign div{border:1px solid #000;height:34px;padding:2px 4px}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <span class="brand">STO Palet</span>
+    <span class="chip" id="hdrSesi">—</span>
+    <span class="grow"></span>
+    <span class="chip" id="hdrOutbox" style="display:none;background:#b45309">0 antri</span>
+    <span class="dot" id="netDot" title="Koneksi"></span>
+    <span class="chip" id="hdrUser">—</span>
+    <button class="icon-btn" onclick="go('set')" title="Pengaturan">⚙</button>
+  </header>
+  <nav class="tabs">
+    <button data-t="pre" class="on" onclick="go('pre')">① Pre-STO</button>
+    <button data-t="fin" onclick="go('fin')">② STO Final</button>
+    <button data-t="prog" onclick="go('prog')">③ Progress</button>
+  </nav>
+
+  <main>
+    <!-- ================= PRE-STO ================= -->
+    <section id="tab-pre" class="on">
+      <div id="preDone"></div>
+      <div class="card">
+        <div class="palhead">
+          <div>
+            <div class="small" id="preMode">PALET BARU</div>
+            <div class="palid" id="preId">ID dibuat otomatis saat simpan</div>
+          </div>
+          <button class="btn ghost" onclick="preLoadAsk()">Edit palet</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <label class="f">Lokasi</label>
+        <select class="in" id="preLok"></select>
+        <div style="height:10px"></div>
+        <label class="f">Scan / ketik kode item</label>
+        <div class="row picker">
+          <input class="in big" id="preItem" placeholder="Ketik keyword (mis. tissue 30x30) atau scan barcode" autocomplete="off">
+          <button class="btn cam" onclick="scan(v=>pickByCode(v,addPreLine))">📷</button>
+          <div class="sugg" id="preSugg"></div>
+        </div>
+        <div class="small" style="margin-top:6px">Ketik 2+ huruf → pilih dari daftar (↑↓ + Enter, atau ketuk) → isi qty → Enter → item berikutnya. Beberapa kata boleh, urutan bebas.</div>
+      </div>
+
+      <div class="card">
+        <h3>Isi palet <span class="chip" id="preCount" style="background:#e2e8f0;color:#334155">0 item</span></h3>
+        <div id="preLines"><div class="empty">Belum ada item. Scan item untuk mulai.</div></div>
+        <div style="height:10px"></div>
+        <label class="f">Catatan (opsional)</label>
+        <input class="in" id="preNote" placeholder="mis. palet sisa produksi, rak B2">
+      </div>
+
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn pri" id="btnPreSave" onclick="savePre(true)">💾 Simpan &amp; Cetak Label</button>
+        <button class="btn" onclick="savePre(false)">Simpan saja</button>
+        <span class="grow"></span>
+        <button class="btn dang" onclick="resetPre(true)">Reset</button>
+      </div>
+    </section>
+
+    <!-- ================= STO FINAL ================= -->
+    <section id="tab-fin">
+      <div class="card">
+        <label class="f">Scan label palet</label>
+        <div class="row">
+          <input class="in big" id="finScan" placeholder="Scan QR / barcode palet" autocomplete="off" autocapitalize="characters">
+          <button class="btn cam" onclick="scan(v=>loadFinal(v))">📷</button>
+        </div>
+      </div>
+      <div id="finBody"></div>
+      <div class="card" id="histCard" style="display:none">
+        <h3>Riwayat final di perangkat ini</h3>
+        <div class="hist" id="hist"></div>
+      </div>
+    </section>
+
+    <!-- ================= PROGRESS ================= -->
+    <section id="tab-prog">
+      <div class="row" style="margin-bottom:12px">
+        <div class="grow"><b id="progSesi">Progress STO</b><div class="small" id="progTime"></div></div>
+        <button class="btn pri" onclick="loadProgress()">↻ Muat</button>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="sTot">0</div><div class="l">Total palet</div></div>
+        <div class="stat"><div class="n" id="sFin" style="color:var(--green)">0</div><div class="l">Final</div></div>
+        <div class="stat"><div class="n" id="sDr" style="color:var(--amber)">0</div><div class="l">Belum final</div></div>
+        <div class="stat"><div class="n" id="sPct">0%</div><div class="l">Selesai</div></div>
+      </div>
+      <div class="prog"><i id="sBar" style="width:0"></i></div>
+      <div class="card">
+        <div class="row" style="flex-wrap:wrap">
+          <select class="in" id="fLok" style="flex:1;min-width:130px" onchange="renderProgress()"></select>
+          <select class="in" id="fSt" style="flex:1;min-width:130px" onchange="renderProgress()">
+            <option value="DRAFT">Belum final</option><option value="FINAL">Final</option><option value="">Semua status</option>
+          </select>
+          <input class="in" id="fQ" placeholder="Cari ID" style="flex:1;min-width:120px" oninput="renderProgress()">
+        </div>
+        <div class="plist" id="plist" style="margin-top:8px"><div class="empty">Tekan "Muat" untuk melihat progress.</div></div>
+      </div>
+    </section>
+
+    <!-- ================= PENGATURAN ================= -->
+    <section id="tab-set">
+      <div class="card">
+        <h3>Petugas</h3>
+        <label class="f">Nama petugas</label>
+        <input class="in" id="setUser" placeholder="mis. Yoga / Tim Gudang A">
+      </div>
+      <div class="card" id="apiCard">
+        <h3>Koneksi Google Sheet</h3>
+        <label class="f">URL Web App (Apps Script)</label>
+        <input class="in" id="setApi" placeholder="https://script.google.com/macros/s/.../exec">
+        <div style="height:10px"></div>
+        <label class="f">Token API (sheet PARAMETER)</label>
+        <input class="in" id="setToken" placeholder="mis. 7F3A9C21">
+      </div>
+      <div class="card">
+        <h3>Label</h3>
+        <label class="f">Ukuran kertas label</label>
+        <select class="in" id="setLabel">
+          <option value="100x150">Thermal 100 × 150 mm</option>
+          <option value="100x100">Thermal 100 × 100 mm</option>
+          <option value="A5">A5</option>
+          <option value="A4">A4</option>
+        </select>
+      </div>
+      <div class="row" style="flex-wrap:wrap">
+        <button class="btn pri" onclick="saveSettings()">Simpan</button>
+        <button class="btn" onclick="testConn()">Tes koneksi</button>
+        <button class="btn" onclick="loadMaster(true)">Muat ulang master</button>
+        <button class="btn warn" onclick="flushOutbox(true)">Sinkron antrian</button>
+      </div>
+      <p class="small" id="setInfo" style="margin-top:12px"></p>
+    </section>
+  </main>
+</div>
+
+<!-- Bar bawah STO Final -->
+<div class="bar" id="finBar" style="display:none">
+  <div class="in-bar">
+    <div class="sum" id="finSum"></div>
+    <button class="btn ok" id="btnFinal" onclick="finalizeAsk()">✔ Finalisasi</button>
+  </div>
+</div>
+
+<!-- Modal scanner -->
+<div class="modal" id="scanModal">
+  <div class="mbox">
+    <h3 id="scanTitle">Arahkan kamera ke barcode</h3>
+    <div id="reader"></div>
+    <div id="scanMsg" class="small" style="display:none;margin:4px 0 10px;line-height:1.45"></div>
+    <div id="readerFile" style="display:none"></div>
+    <div style="height:10px"></div>
+    <label class="btn pri" style="display:block;text-align:center;margin-bottom:8px">📸 Foto barcode
+      <input type="file" accept="image/*" capture="environment" id="scanFileInp" style="display:none" onchange="scanPhoto(this)">
+    </label>
+    <button class="btn" style="width:100%" onclick="closeScan()">Tutup</button>
+  </div>
+</div>
+
+<!-- Modal dialog umum -->
+<div class="modal" id="dlg">
+  <div class="mbox">
+    <h3 id="dlgT"></h3>
+    <div id="dlgB"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end">
+      <button class="btn" id="dlgNo">Batal</button>
+      <button class="btn pri" id="dlgOk">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<div id="printArea"></div>
+
+<script>
+/* ===================== STATE ===================== */
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+const IN_GAS = typeof google !== 'undefined' && google.script && google.script.run;
+const S = {
+  user: LS.get('sto_user', ''), apiUrl: LS.get('sto_api', ''), token: LS.get('sto_token', ''),
+  label: LS.get('sto_label', '100x150'), master: LS.get('sto_master', null),
+  outbox: LS.get('sto_outbox', []), hist: LS.get('sto_hist', [])
+};
+let IDX = {};                                     // kode/barcode (UPPER) -> item
+let PRE = { id: null, rev: null, lines: [] };    // lines: {kode,desk,uom,qty}
+let FIN = { h: null, lines: [] };                // lines: {kode,desk,uom,qtyPre,qtyFinal,ket,added}
+let PROG = null;
+
+/* ===================== UTIL ===================== */
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const nf = n => (n == null || isNaN(n)) ? '-' : Number(n).toLocaleString('id-ID', { maximumFractionDigits: 3 });
+const pnum = v => { const s = String(v == null ? '' : v).trim().replace(',', '.'); return s === '' ? NaN : Number(s); };
+let toastT;
+function toast(msg, type) {
+  const t = $('toast'); t.textContent = msg; t.className = type || ''; t.style.display = 'block';
+  clearTimeout(toastT); toastT = setTimeout(() => t.style.display = 'none', type === 'err' ? 4500 : 2600);
+}
+function beep(ok = true) {
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain();
+    o.frequency.value = ok ? 1250 : 300; o.connect(g); g.connect(a.destination); g.gain.value = .12;
+    o.start(); setTimeout(() => { o.stop(); a.close(); }, ok ? 110 : 350);
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(ok ? 60 : [80, 60, 80]);
+}
+function busy(btn, on, text) {
+  if (!btn) return;
+  if (on) { btn.dataset.t = btn.innerHTML; btn.innerHTML = '<span class="spin"></span> ' + (text || 'Memproses'); btn.disabled = true; }
+  else { btn.innerHTML = btn.dataset.t || btn.innerHTML; btn.disabled = false; }
+}
+
+/* ===================== API ===================== */
+function api(action, data) {
+  const payload = Object.assign({ action, token: S.token, user: S.user }, data || {});
+  if (IN_GAS) {
+    return new Promise((res, rej) => google.script.run
+      .withSuccessHandler(r => r && r.ok ? res(r.data) : rej(new Error(r ? r.error : 'Tidak ada respon')))
+      .withFailureHandler(e => { const er = new Error(e.message || 'Gagal terhubung'); er.network = true; rej(er); })
+      .apiRun(payload));
+  }
+  if (!S.apiUrl) return Promise.reject(new Error('URL Web App belum diisi di Pengaturan (⚙).'));
+  return fetch(S.apiUrl, { method: 'POST', body: JSON.stringify(payload) })
+    .catch(() => { const er = new Error('Tidak ada koneksi ke server'); er.network = true; throw er; })
+    .then(r => r.json())
+    .then(r => { if (!r.ok) throw new Error(r.error); return r.data; });
+}
+
+/* ===================== NAV ===================== */
+function go(t) {
+  document.querySelectorAll('section').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
+  $('finBar').style.display = (t === 'fin' && FIN.h && FIN.h.STATUS === 'DRAFT') ? 'block' : 'none';
+  if (t === 'fin') setTimeout(() => $('finScan').focus(), 50);
+  if (t === 'pre') setTimeout(() => $('preItem').focus(), 50);
+  if (t === 'set') fillSettings();
+  if (t === 'prog' && !PROG) loadProgress();
+}
+
+/* ===================== MASTER ===================== */
+function applyMaster() {
+  IDX = {};
+  if (!S.master) return;
+  S.master.items.forEach(it => {
+    IDX[it.k.toUpperCase()] = it;
+    if (it.b) IDX[it.b.toUpperCase()] = it;
+  });
+  $('hdrSesi').textContent = S.master.sesi;
+  const lok = S.master.lokasi.map(l => `<option value="${esc(l.k)}">${esc(l.k)}${l.n ? ' — ' + esc(l.n) : ''}</option>`).join('');
+  const cur = $('preLok').value || LS.get('sto_lastLok', '');
+  $('preLok').innerHTML = '<option value="">— pilih lokasi —</option>' + lok;
+  if (cur) $('preLok').value = cur;
+  $('fLok').innerHTML = '<option value="">Semua lokasi</option>' + lok;
+}
+function loadMaster(manual) {
+  return api('master').then(m => {
+    S.master = m; LS.set('sto_master', m); applyMaster();
+    if (manual) toast(`Master dimuat: ${m.items.length} item, ${m.lokasi.length} lokasi`, 'ok');
+  }).catch(e => { if (manual || !S.master) toast(e.message, 'err'); });
+}
+
+/* ===================== ITEM PICKER ===================== */
+/* Pencarian keyword: beberapa kata (urutan bebas), cocok di kode / deskripsi / barcode / UOM.
+   Diurutkan: kode persis > kode diawali keyword > deskripsi diawali keyword > lainnya. */
+const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
+function searchItems(q, limit = 30) {
+  if (!S.master) return [];
+  const words = norm(q).split(' ').filter(Boolean);
+  if (!words.length) return [];
+  const qRaw = q.trim().toUpperCase(), qN = norm(q);
+  const out = [];
+  for (const it of S.master.items) {
+    if (!it._s) { it._s = norm(it.k + ' ' + it.d + ' ' + (it.b || '') + ' ' + it.u); it._k = norm(it.k); it._d = norm(it.d); }
+    if (!words.every(w => it._s.includes(w))) continue;
+    let sc = 0;
+    if (it.k.toUpperCase() === qRaw || (it.b && it.b.toUpperCase() === qRaw)) sc += 1000;
+    if (it._k.startsWith(qN)) sc += 300;
+    else if (it._k.includes(qN)) sc += 150;
+    if (it._d.startsWith(qN)) sc += 100;
+    else if (it._d.includes(qN)) sc += 60;
+    words.forEach(w => { if (it._k.includes(w)) sc += 20; if ((' ' + it._d).includes(' ' + w)) sc += 10; });
+    sc -= it.d.length / 100;           // deskripsi lebih pendek sedikit diunggulkan
+    out.push({ it, sc });
+  }
+  out.sort((x, y) => y.sc - x.sc);
+  return { total: out.length, list: out.slice(0, limit).map(o => o.it), words };
+}
+function hl(text, words) {
+  let h = esc(text);
+  words.slice().sort((a, b) => b.length - a.length).forEach(w => {
+    if (w.length < 1) return;
+    h = h.replace(new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')(?![^<]*>)', 'gi'), '<mark>$1</mark>');
+  });
+  return h;
+}
+function pickByCode(code, cb) {
+  const it = IDX[String(code).trim().toUpperCase()];
+  if (it) { beep(true); cb(it); return true; }
+  beep(false); toast('Item "' + code + '" tidak ada di MASTER_ITEM', 'err'); return false;
+}
+function bindPicker(inputId, suggId, cb) {
+  const inp = $(inputId), sg = $(suggId);
+  let res = [], act = -1, tmr;
+  const hide = () => { sg.style.display = 'none'; act = -1; };
+  const pick = it => { beep(true); cb(it); inp.value = ''; hide(); };
+  const setAct = i => {
+    act = i;
+    sg.querySelectorAll('button').forEach((b, j) => b.classList.toggle('act', j === i));
+    const b = sg.querySelector('button.act'); if (b) b.scrollIntoView({ block: 'nearest' });
+  };
+  const run = () => {
+    const q = inp.value.trim();
+    if (q.length < 2) return hide();
+    if (!S.master) { sg.innerHTML = '<div class="empty">Master item belum dimuat — buka ⚙ lalu "Muat ulang master"</div>'; sg.style.display = 'block'; return; }
+    const r = searchItems(q); res = r.list;
+    if (!res.length) { sg.innerHTML = `<div class="empty">Tidak ada item yang cocok dengan "<b>${esc(q)}</b>"</div>`; sg.style.display = 'block'; return; }
+    sg.innerHTML = `<div class="sg-h">${r.total} item cocok${r.total > res.length ? ' · tampil ' + res.length + ' teratas, perjelas keyword' : ''}</div>` +
+      res.map((it, i) => `<button type="button" data-i="${i}"><b>${hl(it.k, r.words)}</b> <em>${esc(it.u)}</em><span>${hl(it.d, r.words)}</span></button>`).join('');
+    sg.style.display = 'block'; setAct(0);
+  };
+  inp.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(run, 120); });
+  inp.addEventListener('focus', () => { if (inp.value.trim().length >= 2) run(); });
+  sg.addEventListener('mousedown', e => e.preventDefault());     // jaga fokus input saat klik
+  sg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pick(res[+b.dataset.i]); });
+  inp.addEventListener('keydown', e => {
+    const open = sg.style.display === 'block' && res.length;
+    if (e.key === 'ArrowDown' && open) { e.preventDefault(); setAct(Math.min(act + 1, res.length - 1)); return; }
+    if (e.key === 'ArrowUp' && open) { e.preventDefault(); setAct(Math.max(act - 1, 0)); return; }
+    if (e.key === 'Escape') { hide(); return; }
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    clearTimeout(tmr);
+    const q = inp.value.trim(); if (!q) return;
+    const exact = IDX[q.toUpperCase()];                       // hasil scan barcode / kode persis
+    if (exact) return pick(exact);
+    if (!open) run();
+    if (res.length === 1) return pick(res[0]);
+    if (res.length && act >= 0) return pick(res[act]);
+    beep(false); toast('Item "' + q + '" tidak ditemukan', 'err');
+  });
+  inp.addEventListener('blur', () => setTimeout(hide, 150));
+}
+
+/* ===================== SCANNER KAMERA =====================
+   1) Coba kamera live (jalan di GitHub Pages / browser biasa).
+   2) Jika diblokir (mis. halaman Apps Script yang berjalan di iframe),
+      pakai mode FOTO: kamera HP memotret, barcode dibaca dari foto. */
+let QR = null, scanCb = null, scanDone = false;
+const SCAN_FMT = () => { const F = Html5QrcodeSupportedFormats; return [F.QR_CODE, F.CODE_128, F.CODE_39, F.EAN_13, F.EAN_8, F.DATA_MATRIX]; };
+function scanMsg(html) { const m = $('scanMsg'); m.innerHTML = html || ''; m.style.display = html ? 'block' : 'none'; }
+function scan(cb) {
+  if (typeof Html5Qrcode === 'undefined') return toast('Library scanner gagal dimuat (cek internet)', 'err');
+  scanCb = cb; scanDone = false;
+  $('scanModal').classList.add('on');
+  $('scanTitle').textContent = 'Arahkan kamera ke barcode';
+  $('reader').style.display = 'block'; scanMsg('');
+  const liveOk = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext;
+  if (!liveOk || LS.get('sto_photoMode', false)) return photoMode();
+  QR = new Html5Qrcode('reader', { formatsToSupport: SCAN_FMT(), verbose: false });
+  QR.start({ facingMode: 'environment' },
+    { fps: 12, qrbox: (w, h) => { const s = Math.floor(Math.min(w, h) * .8); return { width: s, height: Math.floor(s * .65) }; } },
+    txt => { if (scanDone) return; scanDone = true; closeScan(); scanCb && scanCb(txt.trim()); },
+    () => {}
+  ).catch(e => {
+    try { QR.clear(); } catch (x) {}
+    QR = null;
+    if (/NotAllowed|Permission|denied|policy|SecurityError|NotSupported/i.test(String(e))) LS.set('sto_photoMode', true);
+    photoMode();
+  });
+}
+function photoMode() {
+  $('reader').style.display = 'none';
+  $('scanTitle').textContent = 'Scan lewat foto';
+  scanMsg('Kamera live tidak diizinkan di halaman ini. Tekan <b>📸 Foto barcode</b> → foto label dari dekat (±15–25 cm), terang, tidak miring. Barcode langsung dibaca dari foto.');
+}
+function scanPhoto(inp) {
+  const f = inp.files && inp.files[0]; inp.value = '';
+  if (!f) return;
+  scanMsg('<span class="spin" style="border-color:#2563eb;border-right-color:transparent"></span> Membaca barcode…');
+  const R = new Html5Qrcode('readerFile', { formatsToSupport: SCAN_FMT(), verbose: false });
+  R.scanFile(f, false)
+    .then(txt => { try { R.clear(); } catch (x) {} closeScan(); scanCb && scanCb(String(txt).trim()); })
+    .catch(() => { try { R.clear(); } catch (x) {} beep(false); scanMsg('<b style="color:var(--red)">Barcode tidak terbaca.</b> Foto ulang lebih dekat & terang, usahakan QR / barcode memenuhi sebagian besar foto. Bisa juga ketik ID manual.'); });
+}
+function closeScan() {
+  $('scanModal').classList.remove('on');
+  if (QR) { const q = QR; QR = null; q.stop().then(() => q.clear()).catch(() => {}); }
+}
+
+/* ===================== DIALOG ===================== */
+function dialog(title, html, okText, okCls) {
+  return new Promise(res => {
+    $('dlgT').textContent = title; $('dlgB').innerHTML = html;
+    $('dlgOk').textContent = okText || 'OK'; $('dlgOk').className = 'btn ' + (okCls || 'pri');
+    $('dlg').classList.add('on');
+    const first = $('dlgB').querySelector('input'); if (first) setTimeout(() => first.focus(), 50);
+    const done = v => { $('dlg').classList.remove('on'); $('dlgOk').onclick = $('dlgNo').onclick = null; res(v); };
+    $('dlgOk').onclick = () => {
+      const vals = {}; $('dlgB').querySelectorAll('input,select').forEach(i => vals[i.id] = i.value.trim());
+      done(vals);
+    };
+    $('dlgNo').onclick = () => done(null);
+  });
+}
+
+/* ===================== PRE-STO ===================== */
+function addPreLine(it) {
+  const i = PRE.lines.findIndex(l => l.kode.toUpperCase() === it.k.toUpperCase());
+  if (i >= 0) { toast(it.k + ' sudah ada — tambahkan qty-nya'); focusPreQty(i); return; }
+  PRE.lines.push({ kode: it.k, desk: it.d, uom: it.u, qty: '' });
+  renderPre(); focusPreQty(PRE.lines.length - 1);
+}
+function focusPreQty(i) { setTimeout(() => { const q = document.querySelector(`#preLines .qty[data-i="${i}"]`); if (q) { q.focus(); q.select(); } }, 30); }
+function renderPre() {
+  $('preCount').textContent = PRE.lines.length + ' item';
+  if (!PRE.lines.length) { $('preLines').innerHTML = '<div class="empty">Belum ada item. Scan item untuk mulai.</div>'; return; }
+  $('preLines').innerHTML = PRE.lines.map((l, i) => `
+    <div class="line">
+      <div><div class="li-k">${i + 1}. ${esc(l.kode)}</div><div class="li-d">${esc(l.desk)}</div><div class="li-u">${esc(l.uom)}</div></div>
+      <input class="in qty" data-i="${i}" inputmode="decimal" placeholder="Qty" value="${esc(l.qty)}">
+      <button class="x" onclick="delPre(${i})">✕</button>
+    </div>`).join('');
+}
+function delPre(i) { PRE.lines.splice(i, 1); renderPre(); }
+document.addEventListener('input', e => {
+  if (e.target.matches('#preLines .qty')) PRE.lines[+e.target.dataset.i].qty = e.target.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('#preLines .qty')) { e.preventDefault(); $('preItem').focus(); }
+});
+function resetPre(ask) {
+  const doIt = () => {
+    PRE = { id: null, rev: null, lines: [] };
+    $('preMode').textContent = 'PALET BARU'; $('preId').textContent = 'ID dibuat otomatis saat simpan';
+    $('preNote').value = ''; renderPre(); $('preItem').focus();
+  };
+  if (ask && PRE.lines.length) dialog('Reset palet?', '<p>Isi palet yang belum disimpan akan hilang.</p>', 'Reset', 'dang').then(v => v && doIt());
+  else doIt();
+}
+function savePre(print) {
+  const lok = $('preLok').value;
+  if (!lok) return toast('Pilih lokasi dulu', 'err');
+  if (!PRE.lines.length) return toast('Palet masih kosong', 'err');
+  const bad = PRE.lines.findIndex(l => isNaN(pnum(l.qty)) || pnum(l.qty) < 0);
+  if (bad >= 0) { toast('Qty ' + PRE.lines[bad].kode + ' belum diisi / tidak valid', 'err'); focusPreQty(bad); return; }
+  LS.set('sto_lastLok', lok);
+  const btn = $('btnPreSave'); busy(btn, true, 'Menyimpan');
+  api('saveDraft', {
+    palletId: PRE.id, rev: PRE.rev, lokasi: lok, catatan: $('preNote').value.trim(),
+    items: PRE.lines.map(l => ({ kode: l.kode, qty: pnum(l.qty) }))
+  }).then(pal => {
+    busy(btn, false); beep(true);
+    $('preDone').innerHTML = `<div class="okbox"><div class="small">TERSIMPAN · REV ${esc(pal.header.REV)}</div>
+      <div class="palid">${esc(pal.header.PALLET_ID)}</div>
+      <div class="meta">${esc(pal.header.LOKASI)} · ${pal.lines.length} item · total qty ${nf(pal.header.TOTAL_QTY_PRE)}</div>
+      <div class="row" style="margin-top:10px"><button class="btn pri" id="btnReprint">🖨 Cetak label</button></div></div>`;
+    $('btnReprint').onclick = () => printLabel(pal);
+    if (print) printLabel(pal);
+    resetPre(false);
+  }).catch(e => { busy(btn, false); beep(false); toast(e.message, 'err'); });
+}
+function preLoadAsk() {
+  dialog('Edit palet DRAFT', '<label class="f">ID palet</label><div class="row"><input class="in big" id="eid" autocapitalize="characters" placeholder="PLT-2611-0001"><button class="btn cam" type="button" onclick="scan(v=>{$(\'eid\').value=v})">📷</button></div>', 'Muat')
+    .then(v => {
+      if (!v || !v.eid) return;
+      api('getPallet', { palletId: v.eid }).then(p => {
+        if (p.header.STATUS !== 'DRAFT') return toast('Palet ' + p.header.PALLET_ID + ' berstatus ' + p.header.STATUS + ' — tidak bisa diedit di Pre-STO', 'err');
+        PRE = { id: p.header.PALLET_ID, rev: p.header.REV, lines: p.lines.map(l => ({ kode: l.kode, desk: l.desk, uom: l.uom, qty: String(l.qtyPre) })) };
+        $('preMode').textContent = 'EDIT PALET · REV ' + p.header.REV; $('preId').textContent = p.header.PALLET_ID;
+        $('preLok').value = p.header.LOKASI; $('preNote').value = p.header.CATATAN || '';
+        $('preDone').innerHTML = ''; renderPre(); toast('Palet dimuat', 'ok');
+      }).catch(e => toast(e.message, 'err'));
+    });
+}
+
+/* ===================== LABEL ===================== */
+function printLabel(pal) {
+  const h = pal.header;
+  const sizes = { '100x150': '100mm 150mm', '100x100': '100mm 100mm', 'A5': 'A5', 'A4': 'A4' };
+  $('pageSize').textContent = `@page{size:${sizes[S.label] || '100mm 150mm'};margin:4mm}`;
+  $('printArea').innerHTML = `
+    <div class="lbl">
+      <div class="lbl-h">
+        <div>
+          <div class="lbl-t">LABEL PALET · STOCK OPNAME</div>
+          <div class="lbl-id">${esc(h.PALLET_ID)}</div>
+          <div class="lbl-m">Lokasi: <b>${esc(h.LOKASI)}</b><br>Sesi: ${esc(h.SESI)}<br>Jml item: <b>${pal.lines.length}</b> · Rev ${esc(h.REV)}</div>
+        </div>
+        <div id="lblQr"></div>
+      </div>
+      <div class="lbl-bc"><svg id="lblBc"></svg></div>
+      <table>
+        <tr><th>No</th><th>Kode</th><th>Deskripsi</th><th>UOM</th><th>Qty Pre</th></tr>
+        ${pal.lines.map(l => `<tr><td>${l.no}</td><td>${esc(l.kode)}</td><td>${esc(l.desk)}</td><td>${esc(l.uom)}</td><td class="r">${nf(l.qtyPre)}</td></tr>`).join('')}
+      </table>
+      <div class="lbl-f"><span>Dibuat: ${esc(h.DIBUAT_OLEH)} · ${esc(h.DIBUAT_PADA)}</span><span>Total: <b>${nf(h.TOTAL_QTY_PRE)}</b></span></div>
+      <div class="lbl-sign"><div>Pre-STO (paraf)</div><div>STO Final (paraf)</div></div>
+    </div>`;
+  try { new QRCode($('lblQr'), { text: h.PALLET_ID, width: 96, height: 96, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+  try { JsBarcode('#lblBc', h.PALLET_ID, { format: 'CODE128', height: 34, width: 1.5, fontSize: 11, margin: 0 }); } catch (e) {}
+  setTimeout(() => window.print(), 400);
+}
+
+/* ===================== STO FINAL ===================== */
+$('finScan').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); const v = e.target.value.trim(); if (v) loadFinal(v); }
+});
+function loadFinal(id) {
+  id = String(id).trim().toUpperCase();
+  $('finScan').value = id;
+  if (S.outbox.some(o => o.palletId === id)) { beep(false); toast('Palet ' + id + ' sudah difinalisasi offline, menunggu sinkron', 'err'); return; }
+  $('finBody').innerHTML = '<div class="card empty"><span class="spin" style="border-color:#2563eb;border-right-color:transparent"></span> Memuat palet…</div>';
+  api('getPallet', { palletId: id }).then(p => {
+    beep(p.header.STATUS === 'DRAFT');
+    FIN.h = p.header;
+    FIN.lines = p.lines.map(l => ({ kode: l.kode, desk: l.desk, uom: l.uom, qtyPre: l.qtyPre,
+      qtyFinal: String(l.qtyFinal != null ? l.qtyFinal : l.qtyPre), ket: l.ket, added: false, orig: true }));
+    renderFinal(); $('finScan').value = '';
+  }).catch(e => { beep(false); FIN = { h: null, lines: [] }; $('finBody').innerHTML = ''; $('finBar').style.display = 'none'; toast(e.message, 'err'); });
+}
+function selChip(pre, fin) {
+  const f = pnum(fin);
+  if (isNaN(f)) return '<span class="sel n">?</span>';
+  const d = Math.round((f - pre) * 1e6) / 1e6;
+  return `<span class="sel ${d === 0 ? 'z' : d > 0 ? 'p' : 'n'}">${d > 0 ? '+' : ''}${nf(d)}</span>`;
+}
+function renderFinal() {
+  const h = FIN.h; if (!h) return;
+  const ro = h.STATUS !== 'DRAFT';
+  let warn = '';
+  if (h.STATUS === 'FINAL') warn = `<div class="warnbox">⚠ Palet ini <b>SUDAH FINAL</b> oleh ${esc(h.FINAL_OLEH)} (${esc(h.FINAL_PADA)}). Jangan dihitung ulang.</div>`;
+  if (h.STATUS === 'VOID') warn = `<div class="warnbox">Palet ini berstatus <b>VOID</b> (dibatalkan).</div>`;
+  $('finBody').innerHTML = warn + `
+    <div class="card">
+      <div class="palhead">
+        <div><div class="palid">${esc(h.PALLET_ID)}</div>
+          <div class="meta">${esc(h.LOKASI)} · dibuat ${esc(h.DIBUAT_OLEH)} · ${esc(h.DIBUAT_PADA)} · rev ${esc(h.REV)}</div>
+          ${h.CATATAN ? `<div class="meta">📝 ${esc(h.CATATAN)}</div>` : ''}</div>
+        <span class="st ${esc(h.STATUS)}">${esc(h.STATUS)}</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Hitung fisik</h3>
+        ${ro ? '' : '<button class="btn ghost" onclick="allMatch()">Semua = Pre</button>'}</div>
+      <div id="finLines"></div>
+    </div>
+    ${ro ? '' : `<div class="card"><label class="f">Tambah item (ditemukan di palet tapi tidak tercatat)</label>
+      <div class="row picker"><input class="in" id="finItem" placeholder="Scan / ketik kode item" autocomplete="off">
+      <button class="btn cam" onclick="scan(v=>pickByCode(v,addFinLine))">📷</button><div class="sugg" id="finSugg"></div></div></div>`}
+    <div class="row" style="flex-wrap:wrap">
+      ${h.STATUS === 'FINAL' ? '<button class="btn warn" onclick="reopenAsk()">Buka kembali (PIN SPV)</button>' : ''}
+      ${h.STATUS !== 'VOID' ? '<button class="btn dang" onclick="voidAsk()">VOID palet</button>' : ''}
+      <button class="btn" onclick="printLabel({header:FIN.h,lines:FIN.lines.map((l,i)=>({no:i+1,kode:l.kode,desk:l.desk,uom:l.uom,qtyPre:l.qtyPre}))})">🖨 Cetak ulang label</button>
+    </div>`;
+  renderFinLines();
+  if (!ro) bindPicker('finItem', 'finSugg', addFinLine);
+  $('finBar').style.display = ro ? 'none' : 'block';
+}
+function renderFinLines() {
+  const ro = FIN.h.STATUS !== 'DRAFT';
+  $('finLines').innerHTML = FIN.lines.map((l, i) => `
+    <div class="fline">
+      <div><span class="li-k">${i + 1}. ${esc(l.kode)}</span>${l.added ? '<span class="tag add">TAMBAHAN</span>' : ''}</div>
+      <div class="li-d">${esc(l.desk)} <span class="li-u">· ${esc(l.uom)}</span></div>
+      <div class="fgrid">
+        <div><div class="lab">QTY PRE</div><div class="val">${nf(l.qtyPre)}</div></div>
+        <div><div class="lab">QTY FINAL</div>${ro ? `<div class="val">${nf(pnum(l.qtyFinal))}</div>` :
+          `<input class="in qty fq" data-i="${i}" inputmode="decimal" value="${esc(l.qtyFinal)}">`}</div>
+        <div><div class="lab">SELISIH</div><div id="sel${i}">${selChip(l.qtyPre, l.qtyFinal)}</div></div>
+      </div>
+      ${ro ? (l.ket ? `<div class="small" style="margin-top:6px">📝 ${esc(l.ket)}</div>` : '') :
+        `<div class="row" style="margin-top:8px"><input class="in fk" data-i="${i}" placeholder="Keterangan selisih (opsional)" value="${esc(l.ket)}" style="padding:8px 10px;font-size:13px">
+        ${l.added ? `<button class="x" style="width:36px" onclick="delFin(${i})">✕</button>` : ''}</div>`}
+    </div>`).join('') || '<div class="empty">Tidak ada item</div>';
+  updFinSum();
+}
+document.addEventListener('input', e => {
+  if (e.target.matches('.fq')) { const i = +e.target.dataset.i; FIN.lines[i].qtyFinal = e.target.value; $('sel' + i).innerHTML = selChip(FIN.lines[i].qtyPre, e.target.value); updFinSum(); }
+  if (e.target.matches('.fk')) FIN.lines[+e.target.dataset.i].ket = e.target.value;
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.target.matches('.fq')) {
+    e.preventDefault();
+    const nx = document.querySelector(`.fq[data-i="${+e.target.dataset.i + 1}"]`);
+    if (nx) { nx.focus(); nx.select(); } else e.target.blur();
+  }
+});
+document.addEventListener('focusin', e => { if (e.target.matches('.qty')) e.target.select(); });
+function updFinSum() {
+  if (!FIN.h) return;
+  const n = FIN.lines.length;
+  const diff = FIN.lines.filter(l => { const f = pnum(l.qtyFinal); return isNaN(f) || Math.abs(f - l.qtyPre) > 1e-9; }).length;
+  const tp = FIN.lines.reduce((s, l) => s + l.qtyPre, 0), tf = FIN.lines.reduce((s, l) => s + (pnum(l.qtyFinal) || 0), 0);
+  $('finSum').innerHTML = `<b>${esc(FIN.h.PALLET_ID)}</b> · ${n} item · <b style="color:${diff ? 'var(--red)' : 'var(--green)'}">${diff} selisih</b><br>Pre ${nf(tp)} → Final ${nf(tf)}`;
+}
+function allMatch() { FIN.lines.forEach(l => l.qtyFinal = String(l.qtyPre)); renderFinLines(); toast('Semua qty final = qty pre'); }
+function addFinLine(it) {
+  const i = FIN.lines.findIndex(l => l.kode.toUpperCase() === it.k.toUpperCase());
+  if (i >= 0) { toast(it.k + ' sudah ada di palet ini'); const q = document.querySelector(`.fq[data-i="${i}"]`); q && q.focus(); return; }
+  FIN.lines.push({ kode: it.k, desk: it.d, uom: it.u, qtyPre: 0, qtyFinal: '', ket: 'TAMBAHAN SAAT STO', added: true });
+  renderFinLines();
+  setTimeout(() => { const q = document.querySelector(`.fq[data-i="${FIN.lines.length - 1}"]`); q && q.focus(); }, 30);
+}
+function delFin(i) { FIN.lines.splice(i, 1); renderFinLines(); }
+
+function finalizeAsk() {
+  const bad = FIN.lines.findIndex(l => isNaN(pnum(l.qtyFinal)) || pnum(l.qtyFinal) < 0);
+  if (bad >= 0) { toast('Qty final ' + FIN.lines[bad].kode + ' belum valid', 'err'); const q = document.querySelector(`.fq[data-i="${bad}"]`); q && q.focus(); return; }
+  const diffs = FIN.lines.filter(l => Math.abs(pnum(l.qtyFinal) - l.qtyPre) > 1e-9);
+  const html = `<p>Palet <b>${esc(FIN.h.PALLET_ID)}</b> · ${FIN.lines.length} item.</p>` +
+    (diffs.length ? `<div class="warnbox"><b>${diffs.length} item selisih:</b><br>${diffs.map(l => `${esc(l.kode)}: ${nf(l.qtyPre)} → ${nf(pnum(l.qtyFinal))} ${esc(l.uom)}`).join('<br>')}</div>`
+      : '<div class="okbox" style="margin:0">✓ Semua qty sesuai Pre-STO</div>') +
+    '<p class="small">Setelah final, palet terkunci dan masuk REKAP_STO.</p>';
+  dialog('Finalisasi palet?', html, 'Finalisasi', 'ok').then(v => v && doFinalize());
+}
+function doFinalize() {
+  const payload = {
+    palletId: FIN.h.PALLET_ID, rev: FIN.h.REV, reqId: FIN.h.PALLET_ID + '-' + Date.now(),
+    items: FIN.lines.map(l => ({ kode: l.kode, qtyFinal: pnum(l.qtyFinal), ket: l.ket || '' }))
+  };
+  const btn = $('btnFinal'); busy(btn, true, 'Menyimpan');
+  api('finalize', payload).then(p => {
+    busy(btn, false); beep(true);
+    addHist(p.header.PALLET_ID, p.lines.filter(l => l.selisih).length, 'FINAL');
+    toast('✓ ' + p.header.PALLET_ID + ' FINAL tersimpan', 'ok'); clearFinal();
+  }).catch(e => {
+    busy(btn, false);
+    if (e.network) {
+      payload.user = S.user; S.outbox.push(payload); LS.set('sto_outbox', S.outbox); updNet();
+      addHist(payload.palletId, '-', 'ANTRI'); beep(true);
+      toast('Offline — ' + payload.palletId + ' masuk antrian, otomatis terkirim saat online', 'ok'); clearFinal();
+    } else { beep(false); toast(e.message, 'err'); }
+  });
+}
+function clearFinal() { FIN = { h: null, lines: [] }; $('finBody').innerHTML = ''; $('finBar').style.display = 'none'; $('finScan').focus(); PROG = null; }
+function reopenAsk() {
+  dialog('Buka kembali palet FINAL', '<label class="f">PIN supervisor</label><input class="in" id="pin" type="password" inputmode="numeric"><div style="height:8px"></div><label class="f">Alasan</label><input class="in" id="alasan" placeholder="mis. salah hitung item X">', 'Buka kembali', 'warn')
+    .then(v => {
+      if (!v) return;
+      api('reopen', { palletId: FIN.h.PALLET_ID, pin: v.pin, alasan: v.alasan })
+        .then(() => { toast('Palet dibuka kembali', 'ok'); loadFinal(FIN.h.PALLET_ID); })
+        .catch(e => toast(e.message, 'err'));
+    });
+}
+function voidAsk() {
+  dialog('VOID palet ' + FIN.h.PALLET_ID, '<p class="small">Palet dibatalkan dan tidak dihitung di rekap. Gunakan untuk palet salah buat / dobel.</p><label class="f">PIN supervisor</label><input class="in" id="pin" type="password" inputmode="numeric"><div style="height:8px"></div><label class="f">Alasan</label><input class="in" id="alasan">', 'VOID', 'dang')
+    .then(v => {
+      if (!v) return;
+      api('voidPallet', { palletId: FIN.h.PALLET_ID, pin: v.pin, alasan: v.alasan })
+        .then(() => { toast('Palet di-VOID', 'ok'); clearFinal(); })
+        .catch(e => toast(e.message, 'err'));
+    });
+}
+function addHist(id, sel, st) {
+  S.hist.unshift({ id, sel, st, t: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) });
+  S.hist = S.hist.slice(0, 50); LS.set('sto_hist', S.hist); renderHist();
+}
+function renderHist() {
+  $('histCard').style.display = S.hist.length ? 'block' : 'none';
+  $('hist').innerHTML = S.hist.slice(0, 15).map(h => `<div><span><b>${esc(h.id)}</b> <span class="st ${h.st === 'FINAL' ? 'FINAL' : 'DRAFT'}">${esc(h.st)}</span></span><span class="small">${esc(h.sel)} selisih · ${esc(h.t)}</span></div>`).join('');
+}
+
+/* ===================== OUTBOX (offline) ===================== */
+let flushing = false;
+function flushOutbox(manual) {
+  if (flushing) return;
+  if (!S.outbox.length) { if (manual) toast('Antrian kosong'); return; }
+  flushing = true;
+  const next = () => {
+    if (!S.outbox.length) { flushing = false; updNet(); toast('Semua antrian terkirim', 'ok'); return; }
+    const p = S.outbox[0];
+    api('finalize', p).then(() => {
+      S.outbox.shift(); LS.set('sto_outbox', S.outbox);
+      S.hist.forEach(h => { if (h.id === p.palletId && h.st === 'ANTRI') h.st = 'FINAL'; }); LS.set('sto_hist', S.hist); renderHist();
+      next();
+    }).catch(e => {
+      flushing = false; updNet();
+      if (!e.network) {   // ditolak server (mis. sudah final oleh orang lain) — keluarkan dari antrian & laporkan
+        S.outbox.shift(); LS.set('sto_outbox', S.outbox); updNet();
+        toast('Antrian ' + p.palletId + ' ditolak: ' + e.message, 'err');
+      } else if (manual) toast('Masih offline', 'err');
+    });
+  };
+  next();
+}
+
+/* ===================== PROGRESS ===================== */
+function loadProgress() {
+  $('plist').innerHTML = '<div class="empty">Memuat…</div>';
+  api('progress').then(d => { PROG = d; $('progSesi').textContent = 'Progress ' + d.sesi; $('progTime').textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID'); renderProgress(); })
+    .catch(e => { $('plist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; });
+}
+function renderProgress() {
+  if (!PROG) return;
+  const all = PROG.list.filter(p => p.st !== 'VOID');
+  const fin = all.filter(p => p.st === 'FINAL').length;
+  $('sTot').textContent = all.length; $('sFin').textContent = fin; $('sDr').textContent = all.length - fin;
+  const pct = all.length ? Math.round(fin / all.length * 100) : 0;
+  $('sPct').textContent = pct + '%'; $('sBar').style.width = pct + '%';
+  const lok = $('fLok').value, st = $('fSt').value, q = $('fQ').value.trim().toUpperCase();
+  const rows = PROG.list.filter(p => (!lok || p.lok === lok) && (!st || p.st === st) && (!q || p.id.includes(q)));
+  $('plist').innerHTML = rows.length ? rows.map(p => `
+    <div class="pi" onclick="go('fin');loadFinal('${esc(p.id)}')">
+      <div><b>${esc(p.id)}</b><div class="meta">${esc(p.lok)} · ${esc(p.n)} item · ${p.st === 'FINAL' ? 'final: ' + esc(p.fby) + ' ' + esc(p.fat) : 'dibuat: ' + esc(p.by)}</div></div>
+      <span class="st ${esc(p.st)}">${esc(p.st)}</span>
+    </div>`).join('') : '<div class="empty">Tidak ada palet sesuai filter</div>';
+}
+
+/* ===================== SETTINGS ===================== */
+function fillSettings() {
+  $('setUser').value = S.user; $('setApi').value = S.apiUrl; $('setToken').value = S.token; $('setLabel').value = S.label;
+  $('apiCard').style.display = IN_GAS ? 'none' : 'block';
+  $('setInfo').textContent = `Master: ${S.master ? S.master.items.length + ' item, ' + S.master.lokasi.length + ' lokasi' : 'belum dimuat'} · Antrian offline: ${S.outbox.length}`;
+}
+function saveSettings() {
+  S.user = $('setUser').value.trim(); S.apiUrl = $('setApi').value.trim(); S.token = $('setToken').value.trim(); S.label = $('setLabel').value;
+  LS.set('sto_user', S.user); LS.set('sto_api', S.apiUrl); LS.set('sto_token', S.token); LS.set('sto_label', S.label);
+  $('hdrUser').textContent = S.user || '—';
+  if (!S.user) return toast('Nama petugas wajib diisi', 'err');
+  toast('Pengaturan disimpan', 'ok');
+  loadMaster(true).then(() => { if (S.master) go('pre'); });
+}
+function testConn() {
+  saveSettingsQuiet();
+  api('ping').then(d => toast('Terhubung ✓ sesi ' + d.sesi, 'ok')).catch(e => toast(e.message, 'err'));
+}
+function saveSettingsQuiet() {
+  S.apiUrl = $('setApi').value.trim(); S.token = $('setToken').value.trim();
+  LS.set('sto_api', S.apiUrl); LS.set('sto_token', S.token);
+}
+function updNet() {
+  $('netDot').classList.toggle('off', !navigator.onLine);
+  $('hdrOutbox').style.display = S.outbox.length ? 'inline-block' : 'none';
+  $('hdrOutbox').textContent = S.outbox.length + ' antri';
+}
+
+/* ===================== INIT ===================== */
+/* Link setup sekali klik: ...index.html#api=<URL_WEBAPP>&token=<TOKEN>
+   Disimpan di HP ini lalu dihapus dari address bar. */
+(function () {
+  if (!location.hash || location.hash.indexOf('api=') < 0) return;
+  const p = new URLSearchParams(location.hash.slice(1));
+  if (p.get('api')) { S.apiUrl = p.get('api'); LS.set('sto_api', S.apiUrl); }
+  if (p.get('token')) { S.token = p.get('token'); LS.set('sto_token', S.token); }
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {}
+  setTimeout(() => toast('Koneksi tersimpan di perangkat ini', 'ok'), 300);
+})();
+window.addEventListener('online', () => { updNet(); flushOutbox(false); });
+window.addEventListener('offline', updNet);
+bindPicker('preItem', 'preSugg', addPreLine);
+applyMaster(); renderPre(); renderHist(); updNet();
+$('hdrUser').textContent = S.user || '—';
+if (!S.user || (!IN_GAS && !S.apiUrl)) { go('set'); toast('Isi nama petugas & koneksi dulu'); }
+else { loadMaster(false); flushOutbox(false); }
+</script>
+</body>
+</html>
