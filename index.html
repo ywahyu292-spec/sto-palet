@@ -159,15 +159,20 @@ label.f{display:block;font-size:12px;color:var(--muted);margin:0 0 4px;font-weig
 
       <div class="card">
         <label class="f">Lokasi</label>
-        <select class="in" id="preLok"></select>
+        <select class="in" id="preLok" onchange="LS.set('sto_lastLok',this.value);updItemFilter()"></select>
         <div style="height:10px"></div>
         <label class="f">Scan / ketik kode item</label>
+        <div class="row" style="margin-bottom:8px;flex-wrap:wrap">
+          <select class="in" id="preUom" style="flex:1;min-width:120px" onchange="LS.set('sto_uom',this.value)"></select>
+          <label class="chk" title="Tampilkan juga item yang menurut sistem tidak ada di lokasi ini"><input type="checkbox" id="preAll" onchange="updItemFilter()"> Semua lokasi</label>
+        </div>
+        <div class="small" id="preInfo" style="margin:-2px 0 8px"></div>
         <div class="row picker">
           <input class="in big" id="preItem" placeholder="Ketik keyword (mis. tissue 30x30) atau scan barcode" autocomplete="off">
-          <button class="btn cam" onclick="scan(v=>pickByCode(v,addPreLine))">📷</button>
+          <button class="btn cam" onclick="scan(v=>pickByCode(v,addPreLine,true))">📷</button>
           <div class="sugg" id="preSugg"></div>
         </div>
-        <div class="small" style="margin-top:6px">Ketik 2+ huruf → pilih dari daftar (↑↓ + Enter, atau ketuk) → isi qty → Enter → item berikutnya. Beberapa kata boleh, urutan bebas.</div>
+        <div class="small" style="margin-top:6px">Daftar item mengikuti LOKASI & UOM yang dipilih. Ketuk kolom untuk melihat daftar, atau ketik 2+ huruf → pilih dari daftar (↑↓ + Enter, atau ketuk) → isi qty → Enter → item berikutnya. Beberapa kata boleh, urutan bebas.</div>
       </div>
 
       <div class="card">
@@ -395,6 +400,7 @@ function applyMaster() {
   $('preLok').innerHTML = '<option value="">— pilih lokasi —</option>' + lok;
   if (cur) $('preLok').value = cur;
   $('fLok').innerHTML = '<option value="">Semua lokasi</option>' + lok;
+  updItemFilter();
 }
 function loadMaster(manual) {
   return api('master').then(m => {
@@ -407,13 +413,44 @@ function loadMaster(manual) {
 /* Pencarian keyword: beberapa kata (urutan bebas), cocok di kode / deskripsi / barcode / UOM.
    Diurutkan: kode persis > kode diawali keyword > deskripsi diawali keyword > lainnya. */
 const norm = s => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
-function searchItems(q, limit = 30) {
-  if (!S.master) return [];
+/* Item tercatat di lokasi? (berdasar GUDANG_SISTEM dari InventoryValuation terbaru) */
+function inLok(it, lok) {
+  if (!lok || it.g === undefined) return true;          // master versi lama → tidak difilter
+  return !!it.c && (',' + it.g.replace(/\s+/g, '') + ',').indexOf(',' + lok + ',') >= 0;
+}
+function curFilter() {
+  return { lok: $('preLok').value, uom: $('preUom').value, all: $('preAll').checked };
+}
+function passFilter(it, f) {
+  if (!f) return true;
+  if (f.uom && String(it.u).toUpperCase() !== f.uom) return false;
+  if (f.lok && !f.all && !inLok(it, f.lok)) return false;
+  return true;
+}
+/* Isi pilihan UOM sesuai lokasi + tampilkan jumlah item */
+function updItemFilter() {
+  if (!S.master) return;
+  const lok = $('preLok').value, all = $('preAll').checked;
+  const base = S.master.items.filter(it => !lok || all || inLok(it, lok));
+  const cnt = {};
+  base.forEach(it => { const u = String(it.u || '-').toUpperCase(); cnt[u] = (cnt[u] || 0) + 1; });
+  const cur = $('preUom').value || LS.get('sto_uom', '');
+  $('preUom').innerHTML = '<option value="">Semua UOM (' + base.length + ')</option>' +
+    Object.keys(cnt).sort().map(u => `<option value="${esc(u)}">${esc(u)} (${cnt[u]})</option>`).join('');
+  $('preUom').value = cnt[cur] ? cur : '';
+  $('preInfo').textContent = lok ? (all ? 'Menampilkan semua item (termasuk yang tidak tercatat di ' + lok + ')' : base.length + ' item tercatat di lokasi ' + lok) : 'Pilih lokasi agar daftar item sesuai lokasi';
+}
+function searchItems(q, limit = 30, f) {
+  if (!S.master) return { total: 0, list: [], words: [] };
   const words = norm(q).split(' ').filter(Boolean);
-  if (!words.length) return [];
+  if (!words.length) {                                   // tanpa keyword → daftar item di lokasi/UOM
+    const L = S.master.items.filter(it => passFilter(it, f)).sort((a, b) => a.k < b.k ? -1 : 1);
+    return { total: L.length, list: L.slice(0, Math.max(limit, 50)), words: [] };
+  }
   const qRaw = q.trim().toUpperCase(), qN = norm(q);
   const out = [];
   for (const it of S.master.items) {
+    if (!passFilter(it, f)) continue;
     if (!it._s) { it._s = norm(it.k + ' ' + it.d + ' ' + (it.b || '') + ' ' + it.u); it._k = norm(it.k); it._d = norm(it.d); }
     if (!words.every(w => it._s.includes(w))) continue;
     let sc = 0;
@@ -429,6 +466,14 @@ function searchItems(q, limit = 30) {
   out.sort((x, y) => y.sc - x.sc);
   return { total: out.length, list: out.slice(0, limit).map(o => o.it), words };
 }
+/* Item hasil scan/kode persis di luar lokasi → konfirmasi dulu */
+function guardLok(it, cb) {
+  const f = curFilter();
+  if (!f.lok || f.all || inLok(it, f.lok)) return cb(it);
+  beep(false);
+  dialog('Item di luar lokasi', `<p><b>${esc(it.k)}</b><br>${esc(it.d)} · ${esc(it.u)}</p><div class="warnbox" style="margin:0">Menurut sistem item ini <b>tidak tercatat di lokasi ${esc(f.lok)}</b>${it.g ? ' (tercatat di: ' + esc(it.g) + ')' : ''}. Pastikan item & lokasi sudah benar.</div>`, 'Tetap tambahkan', 'warn')
+    .then(v => v && cb(it));
+}
 function hl(text, words) {
   let h = esc(text);
   words.slice().sort((a, b) => b.length - a.length).forEach(w => {
@@ -437,12 +482,12 @@ function hl(text, words) {
   });
   return h;
 }
-function pickByCode(code, cb) {
+function pickByCode(code, cb, guard) {
   const it = IDX[String(code).trim().toUpperCase()];
-  if (it) { beep(true); cb(it); return true; }
+  if (it) { if (guard) return guardLok(it, x => { beep(true); cb(x); }), true; beep(true); cb(it); return true; }
   beep(false); toast('Item "' + code + '" tidak ada di MASTER_ITEM', 'err'); return false;
 }
-function bindPicker(inputId, suggId, cb) {
+function bindPicker(inputId, suggId, cb, filt) {
   const inp = $(inputId), sg = $(suggId);
   let res = [], act = -1, tmr;
   const hide = () => { sg.style.display = 'none'; act = -1; };
@@ -454,16 +499,18 @@ function bindPicker(inputId, suggId, cb) {
   };
   const run = () => {
     const q = inp.value.trim();
-    if (q.length < 2) return hide();
+    const f = filt ? filt() : null;
+    if (q.length === 1 || (!q && !(f && (f.lok || f.uom)))) return hide();
     if (!S.master) { sg.innerHTML = '<div class="empty">Master item belum dimuat — buka ⚙ lalu "Muat ulang master"</div>'; sg.style.display = 'block'; return; }
-    const r = searchItems(q); res = r.list;
-    if (!res.length) { sg.innerHTML = `<div class="empty">Tidak ada item yang cocok dengan "<b>${esc(q)}</b>"</div>`; sg.style.display = 'block'; return; }
-    sg.innerHTML = `<div class="sg-h">${r.total} item cocok${r.total > res.length ? ' · tampil ' + res.length + ' teratas, perjelas keyword' : ''}</div>` +
+    const r = searchItems(q, 30, f); res = r.list;
+    const fl = f ? [f.lok && !f.all ? 'lokasi ' + f.lok : '', f.uom ? 'UOM ' + f.uom : ''].filter(Boolean).join(' · ') : '';
+    if (!res.length) { sg.innerHTML = `<div class="empty">Tidak ada item${q ? ' yang cocok dengan "<b>' + esc(q) + '</b>"' : ''}${fl ? ' di ' + esc(fl) : ''}${f && f.lok && !f.all ? '<br><small>Centang "Semua lokasi" bila item memang ada di palet</small>' : ''}</div>`; sg.style.display = 'block'; return; }
+    sg.innerHTML = `<div class="sg-h">${r.total} item${q ? ' cocok' : ''}${fl ? ' · ' + esc(fl) : ''}${r.total > res.length ? ' · tampil ' + res.length + ', ketik untuk mempersempit' : ''}</div>` +
       res.map((it, i) => `<button type="button" data-i="${i}"><b>${hl(it.k, r.words)}</b> <em>${esc(it.u)}</em><span>${hl(it.d, r.words)}</span></button>`).join('');
     sg.style.display = 'block'; setAct(0);
   };
   inp.addEventListener('input', () => { clearTimeout(tmr); tmr = setTimeout(run, 120); });
-  inp.addEventListener('focus', () => { if (inp.value.trim().length >= 2) run(); });
+  inp.addEventListener('focus', () => run());
   sg.addEventListener('mousedown', e => e.preventDefault());     // jaga fokus input saat klik
   sg.addEventListener('click', e => { const b = e.target.closest('button'); if (b) pick(res[+b.dataset.i]); });
   inp.addEventListener('keydown', e => {
@@ -476,7 +523,7 @@ function bindPicker(inputId, suggId, cb) {
     clearTimeout(tmr);
     const q = inp.value.trim(); if (!q) return;
     const exact = IDX[q.toUpperCase()];                       // hasil scan barcode / kode persis
-    if (exact) return pick(exact);
+    if (exact) { inp.value = ''; hide(); return filt ? guardLok(exact, x => { beep(true); cb(x); }) : pick(exact); }
     if (!open) run();
     if (res.length === 1) return pick(res[0]);
     if (res.length && act >= 0) return pick(res[act]);
@@ -640,7 +687,7 @@ function setLokasi(code) {
   if (![...sel.options].some(o => o.value === code)) {
     const o = document.createElement('option'); o.value = code; o.textContent = code; sel.appendChild(o);
   }
-  sel.value = code;
+  sel.value = code; updItemFilter();
 }
 /* Nama petugas wajib sebelum menyimpan — minta langsung bila kosong */
 function ensureUser() {
@@ -973,7 +1020,8 @@ function updNet() {
 })();
 window.addEventListener('online', () => { updNet(); flushOutbox(false); });
 window.addEventListener('offline', updNet);
-bindPicker('preItem', 'preSugg', addPreLine);
+bindPicker('preItem', 'preSugg', addPreLine, curFilter);
+$('preAll').checked = false;
 $('bulkFmt').value = LS.get('sto_bulkfmt', 'A4G');
 applyMaster(); renderPre(); renderHist(); updNet();
 $('hdrUser').textContent = S.user || '—';
