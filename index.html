@@ -376,7 +376,7 @@ function go(t) {
   document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === t));
   $('finBar').style.display = (t === 'fin' && FIN.h && FIN.h.STATUS === 'DRAFT') ? 'block' : 'none';
   if (t === 'fin') setTimeout(() => $('finScan').focus(), 50);
-  if (t === 'pre') setTimeout(() => $('preItem').focus(), 50);
+  if (t === 'pre') { setTimeout(() => $('preItem').focus(), 50); if (!S.master && (IN_GAS || S.apiUrl)) loadMaster(false); }
   if (t === 'set') fillSettings();
   if (t === 'prog' && !PROG) loadProgress();
 }
@@ -582,6 +582,7 @@ function resetPre(ask) {
   else doIt();
 }
 function savePre(print) {
+  if (!S.user) return ensureUser().then(ok => ok && savePre(print));
   const lok = $('preLok').value;
   if (!lok) return toast('Pilih lokasi dulu', 'err');
   if (!PRE.lines.length) return toast('Palet masih kosong', 'err');
@@ -603,17 +604,51 @@ function savePre(print) {
     resetPre(false);
   }).catch(e => { busy(btn, false); beep(false); toast(e.message, 'err'); });
 }
+/* Edit palet: pilih dari dropdown palet DRAFT, atau ketik / scan ID */
+function draftOptions(list) {
+  const d = (list || []).filter(p => p.st === 'DRAFT').reverse();   // terbaru di atas
+  if (!d.length) return '<option value="">— belum ada palet DRAFT —</option>';
+  return '<option value="">— pilih palet DRAFT (' + d.length + ') —</option>' +
+    d.map(p => `<option value="${esc(p.id)}">${esc(p.id)} · ${esc(p.lok)} · ${esc(p.n)} item${p.cat ? ' · ' + esc(p.cat) : ''} · ${esc(p.by)}</option>`).join('');
+}
 function preLoadAsk() {
-  dialog('Edit palet DRAFT', '<label class="f">ID palet</label><div class="row"><input class="in big" id="eid" autocapitalize="characters" placeholder="PLT-2611-0001"><button class="btn cam" type="button" onclick="scan(v=>{$(\'eid\').value=v})">📷</button></div>', 'Muat')
+  const html = '<label class="f">Pilih palet</label>' +
+    '<select class="in" id="esel" onchange="$(\'eid\').value=this.value">' + (PROG ? draftOptions(PROG.list) : '<option value="">Memuat daftar palet…</option>') + '</select>' +
+    '<div class="small" style="margin:10px 0 4px">atau ketik / scan ID palet</div>' +
+    '<div class="row"><input class="in big" id="eid" autocapitalize="characters" placeholder="PLT-2611-0001"><button class="btn cam" type="button" onclick="scan(v=>{$(\'eid\').value=v})">📷</button></div>';
+  const p = dialog('Edit palet DRAFT', html, 'Muat');
+  api('progress').then(d => {
+    PROG = d; const sel = $('esel'); if (!sel) return;
+    const cur = sel.value; sel.innerHTML = draftOptions(d.list); if (cur) sel.value = cur;
+  }).catch(e => { const sel = $('esel'); if (sel && !PROG) sel.innerHTML = '<option value="">Gagal memuat daftar: ' + esc(e.message) + '</option>'; });
+  p.then(v => {
+    const id = v && (v.eid || v.esel);
+    if (!id) return;
+    api('getPallet', { palletId: id }).then(pal => {
+      if (pal.header.STATUS !== 'DRAFT') return toast('Palet ' + pal.header.PALLET_ID + ' berstatus ' + pal.header.STATUS + ' — tidak bisa diedit di Pre-STO', 'err');
+      PRE = { id: pal.header.PALLET_ID, rev: pal.header.REV, lines: pal.lines.map(l => ({ kode: l.kode, desk: l.desk, uom: l.uom, qty: String(l.qtyPre) })) };
+      $('preMode').textContent = 'EDIT PALET · REV ' + pal.header.REV; $('preId').textContent = pal.header.PALLET_ID;
+      setLokasi(pal.header.LOKASI); $('preNote').value = pal.header.CATATAN || '';
+      $('preDone').innerHTML = ''; renderPre(); toast('Palet dimuat', 'ok');
+      if (!S.master) loadMaster(false);
+    }).catch(e => toast(e.message, 'err'));
+  });
+}
+/* Pastikan lokasi palet selalu bisa dipilih, walau master belum termuat di HP ini */
+function setLokasi(code) {
+  const sel = $('preLok'); if (!code) return;
+  if (![...sel.options].some(o => o.value === code)) {
+    const o = document.createElement('option'); o.value = code; o.textContent = code; sel.appendChild(o);
+  }
+  sel.value = code;
+}
+/* Nama petugas wajib sebelum menyimpan — minta langsung bila kosong */
+function ensureUser() {
+  if (S.user) return Promise.resolve(true);
+  return dialog('Nama petugas', '<label class="f">Isi nama Anda sebelum menyimpan</label><input class="in" id="uname" placeholder="mis. Eva / Tim Gudang A">', 'Simpan nama')
     .then(v => {
-      if (!v || !v.eid) return;
-      api('getPallet', { palletId: v.eid }).then(p => {
-        if (p.header.STATUS !== 'DRAFT') return toast('Palet ' + p.header.PALLET_ID + ' berstatus ' + p.header.STATUS + ' — tidak bisa diedit di Pre-STO', 'err');
-        PRE = { id: p.header.PALLET_ID, rev: p.header.REV, lines: p.lines.map(l => ({ kode: l.kode, desk: l.desk, uom: l.uom, qty: String(l.qtyPre) })) };
-        $('preMode').textContent = 'EDIT PALET · REV ' + p.header.REV; $('preId').textContent = p.header.PALLET_ID;
-        $('preLok').value = p.header.LOKASI; $('preNote').value = p.header.CATATAN || '';
-        $('preDone').innerHTML = ''; renderPre(); toast('Palet dimuat', 'ok');
-      }).catch(e => toast(e.message, 'err'));
+      if (!v || !v.uname) { toast('Nama petugas wajib diisi', 'err'); return false; }
+      S.user = v.uname; LS.set('sto_user', S.user); $('hdrUser').textContent = S.user; return true;
     });
 }
 
@@ -761,6 +796,7 @@ function addFinLine(it) {
 function delFin(i) { FIN.lines.splice(i, 1); renderFinLines(); }
 
 function finalizeAsk() {
+  if (!S.user) return ensureUser().then(ok => ok && finalizeAsk());
   const bad = FIN.lines.findIndex(l => isNaN(pnum(l.qtyFinal)) || pnum(l.qtyFinal) < 0);
   if (bad >= 0) { toast('Qty final ' + FIN.lines[bad].kode + ' belum valid', 'err'); const q = document.querySelector(`.fq[data-i="${bad}"]`); q && q.focus(); return; }
   const diffs = FIN.lines.filter(l => Math.abs(pnum(l.qtyFinal) - l.qtyPre) > 1e-9);
@@ -941,8 +977,9 @@ bindPicker('preItem', 'preSugg', addPreLine);
 $('bulkFmt').value = LS.get('sto_bulkfmt', 'A4G');
 applyMaster(); renderPre(); renderHist(); updNet();
 $('hdrUser').textContent = S.user || '—';
+// master selalu dimuat (tidak menunggu nama petugas), supaya daftar lokasi & item tersedia
+if (IN_GAS || S.apiUrl) { loadMaster(false); flushOutbox(false); }
 if (!S.user || (!IN_GAS && !S.apiUrl)) { go('set'); toast('Isi nama petugas & koneksi dulu'); }
-else { loadMaster(false); flushOutbox(false); }
 </script>
 </body>
 </html>
