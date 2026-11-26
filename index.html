@@ -387,9 +387,15 @@ function go(t) {
 }
 
 /* ===================== MASTER ===================== */
+/* Master dikirim ringkas: rows = [kode, desk, uom, barcode, gudang, aktif] → diubah ke objek */
+function expandMaster(m) {
+  if (m && m.rows && !m.items) m.items = m.rows.map(a => ({ k: a[0], d: a[1], u: a[2], b: a[3], g: a[4], c: a[5] }));
+  return m;
+}
 function applyMaster() {
   IDX = {};
   if (!S.master) return;
+  expandMaster(S.master);
   S.master.items.forEach(it => {
     IDX[it.k.toUpperCase()] = it;
     if (it.b) IDX[it.b.toUpperCase()] = it;
@@ -403,8 +409,10 @@ function applyMaster() {
   updItemFilter();
 }
 function loadMaster(manual) {
-  return api('master').then(m => {
-    S.master = m; LS.set('sto_master', m); applyMaster();
+  return api('master', { compact: 1 }).then(m => {
+    S.master = expandMaster(m);
+    LS.set('sto_master', m.rows ? { rows: m.rows, lokasi: m.lokasi, sesi: m.sesi, prefix: m.prefix } : m);
+    applyMaster();
     if (manual) toast(`Master dimuat: ${m.items.length} item, ${m.lokasi.length} lokasi`, 'ok');
   }).catch(e => { if (manual || !S.master) toast(e.message, 'err'); });
 }
